@@ -13,11 +13,12 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.deps import get_db
-from app.models.tenant import Tenant, APIKey, TenantPrompt, Document, Assistant
+from app.models.tenant import Tenant, APIKey, TenantPrompt, Document, Assistant, QueryLog
 from app.core.security import generate_api_key
 from app.services.document_processor import get_document_processor
 from app.services.vector_store import get_vector_store
 from app.services.rag_service import get_rag_service
+import json as json_module
 
 settings = get_settings()
 router = APIRouter()
@@ -753,3 +754,128 @@ async def playground_query(
                 "selected_assistant_id": assistant_id,
             },
         )
+
+
+# ============== Logs ==============
+
+
+@router.get("/tenants/{tenant_id}/logs", response_class=HTMLResponse)
+async def tenant_logs(
+    request: Request,
+    tenant_id: UUID,
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None,
+    assistant_id: str = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """View query logs for a tenant."""
+    if not check_admin_auth(request):
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
+    tenant = result.scalar_one_or_none()
+
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    # Get assistants for filter dropdown
+    assistants_result = await db.execute(
+        select(Assistant).where(Assistant.tenant_id == tenant_id)
+    )
+    assistants = assistants_result.scalars().all()
+
+    # Build query
+    stmt = select(QueryLog).where(QueryLog.tenant_id == tenant_id)
+
+    if status:
+        stmt = stmt.where(QueryLog.status == status)
+
+    if assistant_id:
+        stmt = stmt.where(QueryLog.assistant_id == UUID(assistant_id))
+
+    # Order by newest first
+    stmt = stmt.order_by(QueryLog.created_at.desc())
+
+    # Count total
+    count_stmt = select(QueryLog).where(QueryLog.tenant_id == tenant_id)
+    if status:
+        count_stmt = count_stmt.where(QueryLog.status == status)
+    if assistant_id:
+        count_stmt = count_stmt.where(QueryLog.assistant_id == UUID(assistant_id))
+
+    count_result = await db.execute(count_stmt)
+    total = len(count_result.scalars().all())
+
+    # Apply pagination
+    stmt = stmt.offset(offset).limit(limit)
+    logs_result = await db.execute(stmt)
+    logs = logs_result.scalars().all()
+
+    return templates.TemplateResponse(
+        "tenant_logs.html",
+        {
+            "request": request,
+            "tenant": tenant,
+            "logs": logs,
+            "assistants": assistants,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "status_filter": status,
+            "assistant_filter": assistant_id,
+        },
+    )
+
+
+@router.get("/tenants/{tenant_id}/logs/{query_id}", response_class=HTMLResponse)
+async def log_detail(
+    request: Request,
+    tenant_id: UUID,
+    query_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """View detail of a specific log."""
+    if not check_admin_auth(request):
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
+    tenant = result.scalar_one_or_none()
+
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    log_result = await db.execute(
+        select(QueryLog).where(
+            QueryLog.tenant_id == tenant_id,
+            QueryLog.query_id == query_id,
+        )
+    )
+    log = log_result.scalar_one_or_none()
+
+    if not log:
+        raise HTTPException(status_code=404, detail="Log no encontrado")
+
+    # Format JSON for display
+    try:
+        message = json_module.loads(log.message_full) if log.message_full else None
+        message_formatted = json_module.dumps(message, indent=2, ensure_ascii=False) if message else log.message_full
+    except json_module.JSONDecodeError:
+        message_formatted = log.message_full
+
+    try:
+        response = json_module.loads(log.response_full) if log.response_full else None
+        response_formatted = json_module.dumps(response, indent=2, ensure_ascii=False) if response else log.response_full
+    except json_module.JSONDecodeError:
+        response_formatted = log.response_full
+
+    return templates.TemplateResponse(
+        "log_detail.html",
+        {
+            "request": request,
+            "tenant": tenant,
+            "log": log,
+            "message_formatted": message_formatted,
+            "response_formatted": response_formatted,
+        },
+    )

@@ -11,6 +11,9 @@
         <p class="text-gray-500">Slug: {{ tenant.slug }} | Namespace: tenant_{{ tenant.slug }}</p>
     </div>
     <div class="flex gap-2">
+        <a href="/admin/tenants/{{ tenant.id }}/logs" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+            Ver Logs
+        </a>
         <a href="/admin/tenants/{{ tenant.id }}/playground" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">
             Playground
         </a>

@@ -25,6 +25,7 @@ class Tenant(SQLModel, table=True):
     prompts: list["TenantPrompt"] = Relationship(back_populates="tenant")
     documents: list["Document"] = Relationship(back_populates="tenant")
     assistants: list["Assistant"] = Relationship(back_populates="tenant")
+    query_logs: list["QueryLog"] = Relationship(back_populates="tenant")
 
     @property
     def pinecone_namespace(self) -> str:
@@ -140,3 +141,40 @@ class Assistant(SQLModel, table=True):
 
     # Relationship
     tenant: Tenant = Relationship(back_populates="assistants")
+
+
+class QueryLog(SQLModel, table=True):
+    """
+    Log of all queries made to the system.
+    Allows tenants to review requests and responses.
+    """
+
+    __tablename__ = "query_logs"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    tenant_id: UUID = Field(foreign_key="tenants.id", index=True)
+    assistant_id: UUID | None = Field(default=None, foreign_key="assistants.id")
+
+    # Request info
+    query_id: str = Field(index=True)  # The public query_id returned to client
+    message_preview: str  # First 500 chars of message (for display)
+    message_full: str | None = None  # Full message JSON (optional, can be large)
+    search_query: str | None = None
+    top_k: int = Field(default=5)
+
+    # Response info
+    response_preview: str  # First 500 chars of response
+    response_full: str | None = None  # Full response JSON
+    knowledge_chunks_used: int = Field(default=0)
+    cached: bool = Field(default=False)
+    processing_time_ms: int = Field(default=0)
+
+    # Status
+    status: str = Field(default="success", index=True)  # "success", "error"
+    error_message: str | None = None
+
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    # Relationships
+    tenant: Tenant = Relationship(back_populates="query_logs")
+    assistant: Optional["Assistant"] = Relationship()

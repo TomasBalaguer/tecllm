@@ -2,16 +2,70 @@
 Generic query endpoint for RAG-based assistant queries.
 Works with any message structure - the assistant's prompt defines the behavior.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from uuid import UUID
 
 from app.deps import get_db, get_current_tenant
-from app.models.tenant import Tenant, Assistant
+from app.models.tenant import Tenant, Assistant, QueryLog
 from app.schemas.evaluation import QueryRequest, QueryResponse, QueryError
 from app.services.rag_service import get_rag_service
 
 router = APIRouter()
+
+
+def _truncate(text: str, max_length: int = 500) -> str:
+    """Truncate text to max length."""
+    if len(text) <= max_length:
+        return text
+    return text[:max_length] + "..."
+
+
+async def _save_query_log(
+    db: AsyncSession,
+    tenant: Tenant,
+    assistant: Optional[Assistant],
+    request: QueryRequest,
+    result: dict,
+    status: str = "success",
+    error_message: Optional[str] = None,
+):
+    """Save a query log entry."""
+    # Serialize message
+    if isinstance(request.message, (dict, list)):
+        message_str = json.dumps(request.message, ensure_ascii=False)
+    else:
+        message_str = str(request.message)
+
+    # Serialize response
+    response = result.get("response", "")
+    if isinstance(response, (dict, list)):
+        response_str = json.dumps(response, ensure_ascii=False)
+    else:
+        response_str = str(response)
+
+    log = QueryLog(
+        tenant_id=tenant.id,
+        assistant_id=assistant.id if assistant else None,
+        query_id=result.get("query_id", ""),
+        message_preview=_truncate(message_str),
+        message_full=message_str,
+        search_query=request.search_query,
+        top_k=request.top_k,
+        response_preview=_truncate(response_str),
+        response_full=response_str,
+        knowledge_chunks_used=result.get("knowledge_chunks_used", 0),
+        cached=result.get("cached", False),
+        processing_time_ms=result.get("processing_time_ms", 0),
+        status=status,
+        error_message=error_message,
+    )
+
+    db.add(log)
+    await db.commit()
 
 
 async def get_assistant_for_request(
@@ -102,9 +156,26 @@ async def query_assistant(
             assistant=assistant,
         )
 
+        # Save log (don't fail if logging fails)
+        try:
+            await _save_query_log(db, tenant, assistant, request, result)
+        except Exception:
+            pass  # Logging failure shouldn't break the response
+
         return QueryResponse(**result)
 
     except Exception as e:
+        # Try to log the error
+        try:
+            await _save_query_log(
+                db, tenant, assistant, request,
+                {"query_id": "error"},
+                status="error",
+                error_message=str(e)
+            )
+        except Exception:
+            pass
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Query failed: {str(e)}",
@@ -213,4 +284,122 @@ async def list_tenant_assistants(
             for a in assistants
         ],
         "total": len(assistants),
+    }
+
+
+@router.get("/logs")
+async def list_query_logs(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    assistant_id: Optional[UUID] = Query(default=None),
+    tenant: Tenant = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List query logs for the current tenant.
+
+    Logs include request/response previews and metadata.
+    Use query_id to get full details of a specific log.
+    """
+    # Build query
+    stmt = select(QueryLog).where(QueryLog.tenant_id == tenant.id)
+
+    if status_filter:
+        stmt = stmt.where(QueryLog.status == status_filter)
+
+    if assistant_id:
+        stmt = stmt.where(QueryLog.assistant_id == assistant_id)
+
+    # Order by newest first
+    stmt = stmt.order_by(QueryLog.created_at.desc())
+
+    # Count total
+    count_stmt = select(QueryLog).where(QueryLog.tenant_id == tenant.id)
+    if status_filter:
+        count_stmt = count_stmt.where(QueryLog.status == status_filter)
+    if assistant_id:
+        count_stmt = count_stmt.where(QueryLog.assistant_id == assistant_id)
+
+    count_result = await db.execute(count_stmt)
+    total = len(count_result.scalars().all())
+
+    # Apply pagination
+    stmt = stmt.offset(offset).limit(limit)
+    result = await db.execute(stmt)
+    logs = result.scalars().all()
+
+    return {
+        "logs": [
+            {
+                "id": str(log.id),
+                "query_id": log.query_id,
+                "assistant_id": str(log.assistant_id) if log.assistant_id else None,
+                "message_preview": log.message_preview,
+                "response_preview": log.response_preview,
+                "knowledge_chunks_used": log.knowledge_chunks_used,
+                "cached": log.cached,
+                "processing_time_ms": log.processing_time_ms,
+                "status": log.status,
+                "error_message": log.error_message,
+                "created_at": log.created_at.isoformat(),
+            }
+            for log in logs
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/logs/{query_id}")
+async def get_query_log_detail(
+    query_id: str,
+    tenant: Tenant = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get full details of a specific query log.
+
+    Includes complete message and response (not truncated).
+    """
+    stmt = select(QueryLog).where(
+        QueryLog.tenant_id == tenant.id,
+        QueryLog.query_id == query_id,
+    )
+    result = await db.execute(stmt)
+    log = result.scalar_one_or_none()
+
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Log with query_id '{query_id}' not found",
+        )
+
+    # Parse JSON fields if possible
+    try:
+        message = json.loads(log.message_full) if log.message_full else None
+    except json.JSONDecodeError:
+        message = log.message_full
+
+    try:
+        response = json.loads(log.response_full) if log.response_full else None
+    except json.JSONDecodeError:
+        response = log.response_full
+
+    return {
+        "id": str(log.id),
+        "query_id": log.query_id,
+        "tenant_id": str(log.tenant_id),
+        "assistant_id": str(log.assistant_id) if log.assistant_id else None,
+        "message": message,
+        "search_query": log.search_query,
+        "top_k": log.top_k,
+        "response": response,
+        "knowledge_chunks_used": log.knowledge_chunks_used,
+        "cached": log.cached,
+        "processing_time_ms": log.processing_time_ms,
+        "status": log.status,
+        "error_message": log.error_message,
+        "created_at": log.created_at.isoformat(),
     }

@@ -106,6 +106,6 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
-    """Simple health check endpoint."""
+def health_check():
+    """Simple health check endpoint (sync for faster response)."""
     return {"status": "healthy", "service": "reskilling-rag"}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ assistant.name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="/admin/tenants/{{ tenant.id }}/assistants/{{ assistant.id }}" class="text-indigo-600 hover:underline">&larr; Volver a {{ assistant.name }}</a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-6">Editar Asistente</h1>
+    
+    {% if error %}
+    <div class="bg-red-100 text-red-700 p-4 rounded mb-6">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="bg-white p-6 rounded-lg shadow">
+        <form method="post" action="/admin/tenants/{{ tenant.id }}/assistants/{{ assistant.id }}/edit">
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Nombre</label>
+                <input 
+                    type="text" 
+                    name="name" 
+                    value="{{ assistant.name }}"
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500"
+                    required
+                >
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Slug</label>
+                <input 
+                    type="text" 
+                    value="{{ assistant.slug }}"
+                    class="w-full p-3 border rounded bg-gray-100 text-gray-500"
+                    disabled
+                >
+                <p class="text-sm text-gray-500 mt-1">El slug no se puede cambiar</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Descripción (opcional)</label>
+                <input 
+                    type="text" 
+                    name="description" 
+                    value="{{ assistant.description or '' }}"
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500"
+                >
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">System Prompt (Instrucciones)</label>
+                <textarea 
+                    name="system_prompt" 
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    rows="12"
+                    required
+                >{{ assistant.system_prompt }}</textarea>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2 font-medium">Evaluation Prompt (opcional)</label>
+                <textarea 
+                    name="evaluation_prompt" 
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    rows="8"
+                >{{ assistant.evaluation_prompt or '' }}</textarea>
+                <p class="text-sm text-gray-500 mt-1">Deja vacío para usar el template por defecto</p>
+            </div>
+            
+            <div class="flex justify-end gap-4">
+                <a href="/admin/tenants/{{ tenant.id }}/assistants/{{ assistant.id }}" class="px-4 py-2 border rounded hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

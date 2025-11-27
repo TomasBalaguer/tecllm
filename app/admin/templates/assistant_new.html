@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Asistente{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="/admin/tenants/{{ tenant.id }}" class="text-indigo-600 hover:underline">&larr; Volver a {{ tenant.name }}</a>
+    </div>
+
+    <h1 class="text-3xl font-bold mb-6">Crear Nuevo Asistente</h1>
+    
+    {% if error %}
+    <div class="bg-red-100 text-red-700 p-4 rounded mb-6">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="bg-white p-6 rounded-lg shadow">
+        <form method="post" action="/admin/tenants/{{ tenant.id }}/assistants/new">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 mb-2 font-medium">Nombre</label>
+                    <input 
+                        type="text" 
+                        name="name" 
+                        class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Ej: Evaluador de Liderazgo"
+                        required
+                    >
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-2 font-medium">Slug</label>
+                    <input 
+                        type="text" 
+                        name="slug" 
+                        class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Ej: evaluador-liderazgo"
+                        pattern="[a-z0-9-]+"
+                        required
+                    >
+                    <p class="text-sm text-gray-500 mt-1">Solo letras minúsculas, números y guiones</p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Descripción (opcional)</label>
+                <input 
+                    type="text" 
+                    name="description" 
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Descripción breve del asistente..."
+                >
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">System Prompt (Instrucciones)</label>
+                <textarea 
+                    name="system_prompt" 
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    rows="10"
+                    placeholder="Eres un evaluador experto en competencias de liderazgo..."
+                    required
+                ></textarea>
+                <p class="text-sm text-gray-500 mt-1">Define la personalidad y comportamiento del asistente</p>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 mb-2 font-medium">Evaluation Prompt (opcional)</label>
+                <textarea 
+                    name="evaluation_prompt" 
+                    class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    rows="6"
+                    placeholder="Template personalizado para el prompt de evaluación..."
+                ></textarea>
+                <p class="text-sm text-gray-500 mt-1">Deja vacío para usar el template por defecto. Usa {skill_type}, {question}, {candidate_response}, {rag_context}, {context}</p>
+            </div>
+            
+            <div class="flex justify-end gap-4">
+                <a href="/admin/tenants/{{ tenant.id }}" class="px-4 py-2 border rounded hover:bg-gray-50">Cancelar</a>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
+                    Crear Asistente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

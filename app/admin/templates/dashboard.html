@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Dashboard</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-gray-500 text-sm uppercase">Total Tenants</h3>
+        <p class="text-3xl font-bold text-indigo-600">{{ tenants_count }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-gray-500 text-sm uppercase">Tenants Activos</h3>
+        <p class="text-3xl font-bold text-green-600">{{ active_tenants }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-gray-500 text-sm uppercase">Documentos</h3>
+        <p class="text-3xl font-bold text-blue-600">{{ documents_count }}</p>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-bold mb-4">Acciones Rápidas</h2>
+    <div class="space-x-4">
+        <a href="/admin/tenants/new" class="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+            + Nuevo Tenant
+        </a>
+        <a href="/admin/tenants" class="inline-block bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+            Ver Tenants
+        </a>
+    </div>
+</div>
+{% endblock %}

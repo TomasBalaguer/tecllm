@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ assistant.name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="/admin/tenants/{{ tenant.id }}" class="text-indigo-600 hover:underline">&larr; Volver a {{ tenant.name }}</a>
+    </div>
+
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">{{ assistant.name }}</h1>
+            <p class="text-gray-500">Slug: {{ assistant.slug }}</p>
+            {% if assistant.description %}
+            <p class="text-gray-600 mt-1">{{ assistant.description }}</p>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <form method="post" action="/admin/tenants/{{ tenant.id }}/assistants/{{ assistant.id }}/toggle">
+                <button type="submit" class="px-4 py-2 rounded {% if assistant.is_active %}bg-red-100 text-red-700 hover:bg-red-200{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %}">
+                    {% if assistant.is_active %}Desactivar{% else %}Activar{% endif %}
+                </button>
+            </form>
+            <a href="/admin/tenants/{{ tenant.id }}/assistants/{{ assistant.id }}/edit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- Status -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <div class="flex items-center gap-4">
+            <div>
+                <span class="text-sm text-gray-500">Estado:</span>
+                {% if assistant.is_active %}
+                <span class="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Activo</span>
+                {% else %}
+                <span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Inactivo</span>
+                {% endif %}
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Modelo:</span>
+                <span class="ml-2 font-mono text-sm">{{ assistant.model }}</span>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Temperatura:</span>
+                <span class="ml-2">{{ assistant.temperature }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Prompt -->
+    <div class="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 class="text-xl font-bold mb-4">System Prompt</h2>
+        <pre class="bg-gray-50 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">{{ assistant.system_prompt }}</pre>
+    </div>
+
+    <!-- Evaluation Prompt -->
+    {% if assistant.evaluation_prompt %}
+    <div class="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 class="text-xl font-bold mb-4">Evaluation Prompt (personalizado)</h2>
+        <pre class="bg-gray-50 p-4 rounded text-sm overflow-x-auto whitespace-pre-wrap">{{ assistant.evaluation_prompt }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Usage Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 class="font-semibold text-blue-800 mb-2">Cómo usar este asistente</h4>
+        <p class="text-sm text-blue-700 mb-2">Incluye el <code>assistant_slug</code> o <code>assistant_id</code> en tu request:</p>
+        <pre class="bg-white p-3 rounded text-xs overflow-x-auto">curl -X POST http://localhost:8000/api/v1/evaluate \
+  -H "X-API-Key: tu_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "assistant_slug": "{{ assistant.slug }}",
+    "question": "...",
+    "candidate_response": "...",
+    "skill_type": "liderazgo"
+  }'</pre>
+    </div>
+
+    <!-- Info -->
+    <div class="mt-6 text-sm text-gray-500">
+        <p>ID: {{ assistant.id }}</p>
+        <p>Creado: {{ assistant.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p>Actualizado: {{ assistant.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}API Key Creada{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-bold text-green-800 mb-4">API Key Creada Exitosamente</h2>
+        <p class="text-green-700 mb-4">
+            <strong>Importante:</strong> Guarda esta API key ahora. No podrás verla de nuevo.
+        </p>
+        <div class="bg-white p-4 rounded border font-mono text-sm break-all">
+            {{ api_key }}
+        </div>
+        <button onclick="navigator.clipboard.writeText('{{ api_key }}')" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Copiar al Portapapeles
+        </button>
+    </div>
+    
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h4 class="font-semibold text-blue-800 mb-2">Cómo usar esta API key</h4>
+        <p class="text-sm text-blue-700 mb-2">Incluye el header <code>X-API-Key</code> en tus requests:</p>
+        <pre class="bg-white p-3 rounded text-xs overflow-x-auto">curl -X POST http://localhost:8000/api/v1/evaluate \
+  -H "X-API-Key: {{ api_key }}" \
+  -H "Content-Type: application/json" \
+  -d '{"competency": "liderazgo", "question": "...", "answer": "..."}'</pre>
+    </div>
+    
+    <a href="/admin/tenants/{{ tenant_id }}" class="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        Volver al Tenant
+    </a>
+</div>
+{% endblock %}

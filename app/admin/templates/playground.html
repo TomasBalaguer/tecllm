@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Playground - {{ tenant.name }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <a href="/admin/tenants/{{ tenant.id }}" class="text-indigo-600 hover:underline">&larr; Volver a {{ tenant.name }}</a>
+</div>
+
+<h2 class="text-2xl font-bold mb-2">Playground</h2>
+<p class="text-gray-600 mb-6">Prueba consultas a tu asistente con cualquier estructura de datos</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Input Form -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-4">Request (JSON)</h3>
+
+        <form method="post" action="/admin/tenants/{{ tenant.id }}/playground" id="evalForm">
+            <!-- Assistant Selection -->
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Asistente</label>
+                <select name="assistant_id" id="assistantSelect" class="w-full p-3 border rounded focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- Sin asistente (prompts por defecto) --</option>
+                    {% for assistant in assistants %}
+                    <option value="{{ assistant.id }}" {% if selected_assistant_id == assistant.id|string %}selected{% endif %}>
+                        {{ assistant.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- JSON Input -->
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2 font-medium">Payload JSON</label>
+                <textarea
+                    name="json_payload"
+                    id="jsonPayload"
+                    rows="20"
+                    class="w-full p-3 border rounded font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Ingresa cualquier JSON - el asistente lo procesará según su prompt..."
+                    required
+                >{{ json_payload or default_json }}</textarea>
+                <p class="text-sm text-gray-500 mt-1">
+                    Campos especiales opcionales: <code>_instructions</code> (instrucciones adicionales), <code>_search_query</code> (búsqueda personalizada en KB)
+                </p>
+            </div>
+
+            <div class="flex gap-2">
+                <button
+                    type="button"
+                    onclick="loadExample()"
+                    class="px-4 py-2 border rounded hover:bg-gray-50 transition text-sm"
+                >
+                    Cargar Ejemplo
+                </button>
+                <button
+                    type="button"
+                    onclick="formatJson()"
+                    class="px-4 py-2 border rounded hover:bg-gray-50 transition text-sm"
+                >
+                    Formatear JSON
+                </button>
+                <button
+                    type="submit"
+                    class="flex-1 bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition font-medium"
+                    id="submitBtn"
+                >
+                    Enviar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div class="bg-white p-6 rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-4">Response</h3>
+
+        {% if result %}
+        <div class="space-y-4">
+            <!-- Response Content -->
+            <div>
+                <h4 class="font-medium text-gray-700 mb-2">Respuesta del Asistente</h4>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    {% if result.response is mapping %}
+                    <pre class="text-sm text-gray-800 whitespace-pre-wrap overflow-auto max-h-96">{{ result.response | tojson(indent=2) }}</pre>
+                    {% else %}
+                    <p class="text-gray-700 whitespace-pre-wrap">{{ result.response }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Raw JSON Response -->
+            <div>
+                <button type="button" onclick="toggleRaw()" class="flex items-center text-sm text-indigo-600 hover:underline">
+                    Ver respuesta completa (con metadata)
+                </button>
+                <pre id="rawJson" class="hidden mt-2 text-xs bg-gray-900 text-green-400 p-3 rounded overflow-auto max-h-64">{{ result | tojson(indent=2) }}</pre>
+            </div>
+
+            <!-- Metadata -->
+            <div class="border-t pt-4 mt-4">
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <div>ID: {{ result.query_id[:8] if result.query_id else 'N/A' }}...</div>
+                    <div>Tiempo: {{ result.processing_time_ms }}ms</div>
+                    <div>Cached: {{ 'Sí' if result.cached else 'No' }}</div>
+                    <div>Chunks KB: {{ result.knowledge_chunks_used or 0 }}</div>
+                    {% if result.assistant_name %}
+                    <div class="col-span-2">Asistente: {{ result.assistant_name }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% elif error %}
+        <div class="bg-red-50 text-red-700 p-4 rounded">
+            <p class="font-medium">Error</p>
+            <p class="text-sm mt-1 font-mono">{{ error }}</p>
+        </div>
+
+        {% else %}
+        <div class="text-center text-gray-500 py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            <p class="mt-4">Ingresa un JSON y haz clic en "Enviar"</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- API Info -->
+<div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <h4 class="font-semibold text-blue-800 mb-2">Equivalente API</h4>
+    <pre class="text-sm text-blue-700 bg-blue-100 p-3 rounded overflow-x-auto">POST /api/v1/query
+Authorization: Bearer sk_{{ tenant.slug[:8] }}_xxxxx
+Content-Type: application/json
+
+{
+  "message": {payload del formulario},
+  "assistant_slug": "tu-asistente",
+  "instructions": "Instrucciones opcionales",
+  "top_k": 5
+}</pre>
+</div>
+
+<script>
+// Generic example - the structure depends on the assistant's prompt
+const examplePayload = {
+    "query": "¿Cuáles son las mejores prácticas para evaluar habilidades de liderazgo?",
+    "_instructions": "Responde en formato JSON con campos: respuesta, fuentes, confianza",
+    "_search_query": "liderazgo evaluación competencias"
+};
+
+function loadExample() {
+    document.getElementById('jsonPayload').value = JSON.stringify(examplePayload, null, 2);
+}
+
+function formatJson() {
+    const textarea = document.getElementById('jsonPayload');
+    try {
+        const parsed = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(parsed, null, 2);
+    } catch (e) {
+        alert('JSON inválido: ' + e.message);
+    }
+}
+
+function toggleRaw() {
+    const raw = document.getElementById('rawJson');
+    raw.classList.toggle('hidden');
+}
+
+document.getElementById('evalForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Evaluando...';
+});
+
+// Load example on first visit if empty
+if (!document.getElementById('jsonPayload').value.trim()) {
+    loadExample();
+}
+</script>
+{% endblock %}

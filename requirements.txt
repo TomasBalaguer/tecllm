@@ -40,3 +40,4 @@ tenacity==8.2.3
 
 # Security
 passlib==1.7.4
+bcrypt==4.1.2

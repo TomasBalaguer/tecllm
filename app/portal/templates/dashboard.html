@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Bienvenido, {{ tenant.name }}</h1>
+    <p class="text-gray-500 mt-2">Gestiona tu asistente de IA desde aqui</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h2 class="text-gray-500 text-sm">Asistentes</h2>
+                <p class="text-2xl font-bold text-gray-800">{{ assistants_count }}</p>
+            </div>
+        </div>
+        <a href="/portal/assistants" class="text-blue-600 text-sm hover:underline mt-4 block">Ver asistentes &rarr;</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h2 class="text-gray-500 text-sm">Documentos</h2>
+                <p class="text-2xl font-bold text-gray-800">{{ documents_count }}</p>
+            </div>
+        </div>
+        <a href="/portal/documents" class="text-green-600 text-sm hover:underline mt-4 block">Ver documentos &rarr;</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h2 class="text-gray-500 text-sm">API Keys</h2>
+                <p class="text-2xl font-bold text-gray-800">{{ api_keys_count }}</p>
+            </div>
+        </div>
+        <a href="/portal/api-keys" class="text-yellow-600 text-sm hover:underline mt-4 block">Gestionar keys &rarr;</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <h2 class="text-gray-500 text-sm">Queries</h2>
+                <p class="text-2xl font-bold text-gray-800">{{ queries_count }}</p>
+            </div>
+        </div>
+        <a href="/portal/logs" class="text-purple-600 text-sm hover:underline mt-4 block">Ver logs &rarr;</a>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Acciones Rapidas</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/portal/playground" class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+            <div class="p-2 bg-indigo-600 text-white rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <span class="ml-3 font-medium">Probar en Playground</span>
+        </a>
+
+        <a href="/portal/documents/upload" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition">
+            <div class="p-2 bg-green-600 text-white rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+            </div>
+            <span class="ml-3 font-medium">Subir Documento</span>
+        </a>
+
+        <a href="/portal/assistants/new" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+            <div class="p-2 bg-blue-600 text-white rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+            </div>
+            <span class="ml-3 font-medium">Crear Asistente</span>
+        </a>
+    </div>
+</div>
+
+<!-- Tenant Info -->
+<div class="mt-6 bg-gray-50 rounded-lg p-4">
+    <h3 class="text-sm font-medium text-gray-500 mb-2">Informacion del Tenant</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+            <span class="text-gray-500">Slug:</span>
+            <span class="font-mono ml-2">{{ tenant.slug }}</span>
+        </div>
+        <div>
+            <span class="text-gray-500">Namespace:</span>
+            <span class="font-mono ml-2">{{ tenant.pinecone_namespace }}</span>
+        </div>
+        <div>
+            <span class="text-gray-500">Estado:</span>
+            {% if tenant.is_active %}
+            <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Activo</span>
+            {% else %}
+            <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Inactivo</span>
+            {% endif %}
+        </div>
+        <div>
+            <span class="text-gray-500">Creado:</span>
+            <span class="ml-2">{{ tenant.created_at.strftime('%Y-%m-%d') }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

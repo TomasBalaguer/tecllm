@@ -9,6 +9,7 @@ from app.db.redis import init_redis, close_redis
 # Import routers
 from app.routers import health, admin, evaluate, documents
 from app.admin.routes import router as admin_panel_router
+from app.portal.routes import router as portal_router
 
 settings = get_settings()
 
@@ -27,6 +28,7 @@ async def lifespan(app: FastAPI):
     print("=" * 50)
     print("Service ready!")
     print("Admin panel: http://localhost:8000/admin")
+    print("Tenant portal: http://localhost:8000/portal")
     print("API docs: http://localhost:8000/docs")
     print("=" * 50)
     yield
@@ -87,6 +89,9 @@ app.include_router(documents.router, prefix="/api/v1", tags=["Documents"])
 
 # Admin web panel (uses session-based auth)
 app.include_router(admin_panel_router, prefix="/admin", tags=["Admin Panel"])
+
+# Tenant portal (uses tenant session-based auth)
+app.include_router(portal_router, prefix="/portal", tags=["Tenant Portal"])
 
 
 @app.get("/", tags=["Root"])

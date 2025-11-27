@@ -276,6 +276,47 @@ async def toggle_tenant(
     return RedirectResponse(url=f"/admin/tenants/{tenant_id}", status_code=303)
 
 
+@router.post("/tenants/{tenant_id}/portal-access")
+async def set_portal_access(
+    request: Request,
+    tenant_id: UUID,
+    email: str = Form(...),
+    password: str = Form(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Set portal access credentials for a tenant."""
+    if not check_admin_auth(request):
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
+    tenant = result.scalar_one_or_none()
+
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    # Check email uniqueness
+    existing = await db.execute(
+        select(Tenant).where(Tenant.email == email, Tenant.id != tenant_id)
+    )
+    if existing.scalar_one_or_none():
+        # Return error - email already in use
+        return RedirectResponse(url=f"/admin/tenants/{tenant_id}?error=email_exists", status_code=303)
+
+    # Update email
+    tenant.email = email
+
+    # Update password if provided
+    if password:
+        import bcrypt
+        tenant.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    tenant.updated_at = datetime.utcnow()
+    db.add(tenant)
+    await db.commit()
+
+    return RedirectResponse(url=f"/admin/tenants/{tenant_id}", status_code=303)
+
+
 # ============== Documents ==============
 
 

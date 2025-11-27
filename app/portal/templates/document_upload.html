@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Subir Documento{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <a href="/portal/documents" class="text-indigo-600 hover:underline">&larr; Volver a Documentos</a>
+</div>
+
+<div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Subir Documento</h1>
+
+    {% if success %}
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/portal/documents/upload" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="title">
+                Titulo del Documento *
+            </label>
+            <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+                placeholder="Ej: Manual de Competencias de Liderazgo"
+            >
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="document_type">
+                Tipo de Documento *
+            </label>
+            <select
+                id="document_type"
+                name="document_type"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-indigo-500"
+            >
+                <option value="">Seleccionar tipo...</option>
+                <option value="competency">Competencia</option>
+                <option value="rubric">Rubrica</option>
+                <option value="methodology">Metodologia</option>
+                <option value="example">Ejemplo</option>
+                <option value="guide">Guia</option>
+                <option value="other">Otro</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="file">
+                Archivo *
+            </label>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                    type="file"
+                    id="file"
+                    name="file"
+                    required
+                    accept=".pdf,.txt,.md,.docx"
+                    class="hidden"
+                    onchange="updateFileName(this)"
+                >
+                <label for="file" class="cursor-pointer">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">
+                        <span class="text-indigo-600 hover:text-indigo-500">Seleccionar archivo</span>
+                        o arrastrar y soltar
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500">PDF, TXT, MD, DOCX</p>
+                </label>
+                <p id="file-name" class="mt-2 text-sm text-indigo-600 font-medium hidden"></p>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+            <a href="/portal/documents" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                Cancelar
+            </a>
+            <button
+                type="submit"
+                class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+            >
+                Subir y Procesar
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateFileName(input) {
+    const fileName = input.files[0]?.name;
+    const fileNameEl = document.getElementById('file-name');
+    if (fileName) {
+        fileNameEl.textContent = fileName;
+        fileNameEl.classList.remove('hidden');
+    } else {
+        fileNameEl.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ assistant.name }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <a href="/portal/assistants" class="text-indigo-600 hover:underline">&larr; Volver a Asistentes</a>
+</div>
+
+<div class="flex justify-between items-start mb-6">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">{{ assistant.name }}</h1>
+        <p class="text-gray-500">
+            <code class="bg-gray-100 px-2 py-1 rounded">{{ assistant.slug }}</code>
+            {% if assistant.is_active %}
+            <span class="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Activo</span>
+            {% else %}
+            <span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Inactivo</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="flex space-x-2">
+        <a href="/portal/assistants/{{ assistant.id }}/edit" class="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200">
+            Editar
+        </a>
+        <form method="post" action="/portal/assistants/{{ assistant.id }}/toggle" class="inline">
+            <button type="submit" class="{% if assistant.is_active %}bg-red-100 text-red-700 hover:bg-red-200{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %} px-4 py-2 rounded">
+                {% if assistant.is_active %}Desactivar{% else %}Activar{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if assistant.description %}
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-2">Descripcion</h2>
+    <p class="text-gray-700">{{ assistant.description }}</p>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">System Prompt</h2>
+    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap">{{ assistant.system_prompt }}</pre>
+</div>
+
+{% if assistant.evaluation_prompt %}
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">Evaluation Prompt</h2>
+    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap">{{ assistant.evaluation_prompt }}</pre>
+</div>
+{% endif %}
+
+<!-- API Usage Example -->
+<div class="bg-gray-50 rounded-lg p-6">
+    <h2 class="text-lg font-bold text-gray-800 mb-4">Uso en API</h2>
+    <p class="text-sm text-gray-600 mb-3">Para usar este asistente en tus llamadas API:</p>
+    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">POST /api/v1/query
+{
+    "message": { ... },
+    "assistant_slug": "{{ assistant.slug }}"
+}</pre>
+</div>
+
+<!-- Metadata -->
+<div class="mt-6 text-sm text-gray-500">
+    <p>Creado: {{ assistant.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p>Actualizado: {{ assistant.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p>Modelo: {{ assistant.model }}</p>
+</div>
+{% endblock %}

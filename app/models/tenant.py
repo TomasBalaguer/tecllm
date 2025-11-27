@@ -16,6 +16,11 @@ class Tenant(SQLModel, table=True):
     name: str = Field(index=True)
     slug: str = Field(unique=True, index=True)  # Used as Pinecone namespace
     description: str | None = None
+
+    # Portal authentication
+    email: str | None = Field(default=None, index=True)
+    password_hash: str | None = None  # bcrypt hash
+
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

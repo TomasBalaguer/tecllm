@@ -18,7 +18,7 @@ class LLMService:
         self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
         self.model = settings.llm_model
         self.temperature = settings.llm_temperature
-        self.max_tokens = settings.max_context_tokens
+        self.max_tokens = settings.max_output_tokens
 
     async def query(
         self,

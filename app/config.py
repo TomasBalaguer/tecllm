@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # LLM Config
     llm_model: str = "claude-sonnet-4-20250514"
     llm_temperature: float = 0.0
-    max_context_tokens: int = 4000
+    max_output_tokens: int = 8192  # Max output tokens for Claude response
 
     # Cache
     cache_ttl_seconds: int = 86400  # 24 hours
